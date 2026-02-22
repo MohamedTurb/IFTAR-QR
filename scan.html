@@ -1,107 +1,110 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <link rel="icon" href="data:,">
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>QR Check-in</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>QR Check-in</title>
+  <link rel="icon" href="data:,">
+  <script src="https://unpkg.com/html5-qrcode"></script>
 
-<script src="https://unpkg.com/html5-qrcode"></script>
-
-<style>
-body{font-family:system-ui;margin:16px;background:#0b1220;color:#fff}
-.card{background:#111a2e;border:1px solid #223055;border-radius:12px;padding:14px;margin:12px 0}
-button,input{padding:10px;border-radius:8px;border:1px solid #2b3b68;background:#0b1220;color:#fff}
-.ok{border-color:green}
-.bad{border-color:red}
-</style>
+  <style>
+    body{font-family:system-ui;margin:16px;background:#0b1220;color:#fff}
+    .card{background:#111a2e;border:1px solid #223055;border-radius:12px;padding:14px;margin:12px 0}
+    button,input{padding:10px;border-radius:8px;border:1px solid #2b3b68;background:#0b1220;color:#fff}
+    button{cursor:pointer}
+    .ok{border-color:#1f7a3a}
+    .bad{border-color:#7a1f1f}
+    #reader{width:100%; min-height: 260px;}
+  </style>
 </head>
 
 <body>
+  <h2>QR Check-in</h2>
 
-<h2>QR Check-in</h2>
+  <div class="card">
+    <input id="usedBy" value="Gate-A1"/>
+    <button id="startBtn">Start Scan</button>
+    <button id="stopBtn">Stop</button>
+  </div>
 
-<input id="usedBy" value="Gate-A1"/>
-<button onclick="start()">Start Scan</button>
-<button onclick="stop()">Stop</button>
+  <div id="result" class="card">Result will appear here</div>
+  <div id="reader" class="card"></div>
 
-<div id="reader"></div>
-<div id="result" class="card">Result will appear here</div>
-
-<script>
-
+  <script>
+    // ✅ ضع القيم الحقيقية هنا
 const API_URL = "https://script.google.com/macros/s/AKfycbzfm1r2O32I88scfQafhPcTetvK_8LPOOgzYR5xvjgALQZSYNF14jwHLjwnojTV-kg/exec";
 const API_KEY = "ECU_EVENT_2026_SECRET_987654";
 
-let scanner = null;
 
-function show(ok,msg){
-document.getElementById("result").className = ok ? "card ok" : "card bad";
-document.getElementById("result").innerText = msg;
-}
+    let scanner = null;
+    let busy = false;
 
-async function checkin(ticket){
+    function show(ok, msg){
+      const el = document.getElementById("result");
+      el.className = ok ? "card ok" : "card bad";
+      el.textContent = msg;
+    }
 
-  const url =
-    API_URL +
-    "?action=checkin" +
-    "&ticket=" + encodeURIComponent(ticket.trim()) +
-    "&usedBy=" + encodeURIComponent((document.getElementById("usedBy").value || "Gate").trim()) +
-    "&key=" + encodeURIComponent(API_KEY);
+    async function checkin(ticket){
+      if (busy) return;
+      busy = true;
 
-  let data;
-  try{
-    const res = await fetch(url, { method: "GET" });
-    data = await res.json();
-  }catch(e){
-    show(false, "Network/API Error: " + e);
-    return;
-  }
+      const usedBy = (document.getElementById("usedBy").value || "Gate").trim();
+      const t = (ticket || "").trim();
 
-  if(data.ok){
-    show(true, "ACCEPTED");
-    navigator.vibrate?.(80);
-  }else{
-    show(false, data.reason || "REJECTED");
-    navigator.vibrate?.([60,60,60]);
-  }
-}
-</script>
+      const url = API_URL
+        + "?action=checkin"
+        + "&ticket=" + encodeURIComponent(t)
+        + "&usedBy=" + encodeURIComponent(usedBy)
+        + "&key=" + encodeURIComponent(API_KEY);
 
-const data = await res.json();
+      try{
+        const res = await fetch(url, { method: "GET" });
+        const data = await res.json();
 
-if(data.ok){
-show(true,"ACCEPTED");
-navigator.vibrate?.(80);
-}else{
-show(false,data.reason || "REJECTED");
-navigator.vibrate?.([60,60,60]);
-}
+        if(data.ok){
+          show(true, "✅ ACCEPTED");
+          navigator.vibrate?.(80);
+        } else {
+          show(false, "⛔ " + (data.reason || "REJECTED"));
+          navigator.vibrate?.([60,60,60]);
+        }
+      } catch(e){
+        show(false, "⛔ Network/API Error: " + e);
+      } finally {
+        setTimeout(()=>{ busy = false; }, 600); // يمنع تكرار سريع
+      }
+    }
 
-}
+    async function start(){
+      if (scanner) return;
 
-async function start(){
+      try{
+        scanner = new Html5Qrcode("reader");
+        await scanner.start(
+          { facingMode:"environment" },
+          { fps:10, qrbox:250 },
+          (decodedText)=> checkin(decodedText)
+        );
+        show(true, "Ready ✅");
+      } catch(e){
+        scanner = null;
+        show(false, "Camera Error: " + e);
+      }
+    }
 
-scanner = new Html5Qrcode("reader");
+    async function stop(){
+      if(!scanner) return;
+      try{
+        await scanner.stop();
+        scanner.clear();
+      } catch(e) {}
+      scanner = null;
+      show(true, "Stopped");
+    }
 
-await scanner.start(
-{ facingMode:"environment" },
-{ fps:10, qrbox:250 },
-(decodedText)=>{
-checkin(decodedText);
-}
-);
-
-}
-
-async function stop(){
-if(scanner){
-await scanner.stop();
-scanner.clear();
-}
-}
-
-</script>
-
+    document.getElementById("startBtn").addEventListener("click", start);
+    document.getElementById("stopBtn").addEventListener("click", stop);
+  </script>
 </body>
 </html>
