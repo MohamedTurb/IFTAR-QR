@@ -8,22 +8,210 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    body{font-family:system-ui;margin:16px;background:#0b1220;color:#fff}
-    .card{background:#111a2e;border:1px solid #223055;border-radius:12px;padding:14px;margin:12px 0}
-    button,input{padding:10px;border-radius:8px;border:1px solid #2b3b68;background:#0b1220;color:#fff}
-    button{cursor:pointer}
-    .ok{border-color:#1f7a3a}
-    .bad{border-color:#7a1f1f}
-    #reader{width:100%; min-height:260px;}
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui;
+      margin: 0;
+      padding: 16px;
+      background: #0b1220;
+      color: #fff;
+    }
+
+    h2 {
+      margin: 0 0 16px 0;
+      font-size: 28px;
+    }
+
+    .card {
+      background: #111a2e;
+      border: 1px solid #223055;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+
+    button, input {
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid #2b3b68;
+      background: #0b1220;
+      color: #fff;
+      font-size: 16px;
+      min-height: 44px;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    button:active {
+      opacity: 0.8;
+    }
+
+    input {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .ok {
+      border-color: #1f7a3a;
+      background-color: rgba(31, 122, 58, 0.1);
+    }
+
+    .bad {
+      border-color: #7a1f1f;
+      background-color: rgba(122, 31, 31, 0.1);
+    }
+
+    #reader {
+      width: 100%;
+      min-height: 260px;
+    }
 
     /* Result formatting */
-    .result-title{font-size:22px;font-weight:800;margin:0 0 10px}
-    .grid{display:grid;grid-template-columns:120px 1fr;gap:8px 12px}
-    .label{color:#9ca3af}
-    .value{font-weight:650}
-    .sep{height:1px;background:#223055;margin:12px 0}
-    .small{color:#9ca3af;font-size:12px;margin-top:10px;white-space:normal}
-    .muted{color:#9ca3af;font-size:12px;margin-top:10px}
+    .result-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0 0 16px 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 12px 16px;
+    }
+
+    .label {
+      color: #9ca3af;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .value {
+      font-weight: 650;
+      word-break: break-word;
+    }
+
+    .sep {
+      height: 1px;
+      background: #223055;
+      margin: 12px 0;
+      grid-column: 1 / -1;
+    }
+
+    .small {
+      color: #9ca3af;
+      font-size: 12px;
+      margin-top: 10px;
+      white-space: normal;
+      line-height: 1.5;
+    }
+
+    .muted {
+      color: #9ca3af;
+      font-size: 12px;
+      margin-top: 12px;
+      line-height: 1.4;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+
+      h2 {
+        font-size: 24px;
+        margin-bottom: 12px;
+      }
+
+      .card {
+        padding: 14px;
+        margin: 10px 0;
+        border-radius: 10px;
+      }
+
+      button, input {
+        padding: 11px 14px;
+        font-size: 15px;
+        min-height: 42px;
+      }
+
+      div[style*="display:flex"] {
+        flex-direction: column;
+        gap: 12px !important;
+      }
+
+      input {
+        width: 100%;
+        min-width: unset;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 4px 0;
+      }
+
+      .label {
+        color: #7ca3af;
+        font-size: 11px;
+        margin-bottom: 2px;
+      }
+
+      .value {
+        margin-bottom: 10px;
+      }
+
+      .result-title {
+        font-size: 18px;
+        margin-bottom: 12px;
+      }
+
+      #reader {
+        min-height: 240px;
+      }
+
+      .small, .muted {
+        font-size: 11px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      body {
+        padding: 10px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      .card {
+        padding: 12px;
+        border-radius: 8px;
+      }
+
+      button, input {
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      .result-title {
+        font-size: 16px;
+      }
+
+      #reader {
+        min-height: 200px;
+      }
+    }
   </style>
 </head>
 
