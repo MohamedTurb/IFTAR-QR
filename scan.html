@@ -14,7 +14,16 @@
     button{cursor:pointer}
     .ok{border-color:#1f7a3a}
     .bad{border-color:#7a1f1f}
-    #reader{width:100%; min-height: 260px;}
+    #reader{width:100%; min-height:260px;}
+
+    /* Result formatting */
+    .result-title{font-size:22px;font-weight:800;margin:0 0 10px}
+    .grid{display:grid;grid-template-columns:120px 1fr;gap:8px 12px}
+    .label{color:#9ca3af}
+    .value{font-weight:650}
+    .sep{height:1px;background:#223055;margin:12px 0}
+    .small{color:#9ca3af;font-size:12px;margin-top:10px;white-space:normal}
+    .muted{color:#9ca3af;font-size:12px;margin-top:10px}
   </style>
 </head>
 
@@ -22,113 +31,133 @@
   <h2>QR Check-in</h2>
 
   <div class="card">
-    <input id="usedBy" value="Gate-A1"/>
-    <button id="startBtn">Start Scan</button>
-    <button id="stopBtn">Stop</button>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <input id="usedBy" value="Gate-A1" />
+      <button id="startBtn">Start Scan</button>
+      <button id="stopBtn">Stop</button>
+    </div>
+    <div class="muted">Tip: set each phone to Gate-A1 / Gate-A2 / Gate-A3</div>
   </div>
 
-  <div id="result" class="card">Result will appear here</div>
+  <div id="result" class="card">
+    <div class="small">Result will appear here…</div>
+  </div>
+
   <div id="reader" class="card"></div>
 
-<script>
+  <script>
+    // ✅ ضع القيم الحقيقية هنا
   const API_URL = "https://script.google.com/macros/s/AKfycbzfm1r2O32I88scfQafhPcTetvK_8LPOOgzYR5xvjgALQZSYNF14jwHLjwnojTV-kg/exec";
   const API_KEY = "CU_EVENT_2026_SECRET_987654"; // ✅ تأكد نفس اللي في Apps Script
 
-  let scanner = null;
-  let busy = false;
+    let scanner = null;
+    let busy = false;
+    let lastTicket = null;
+    let lastTime = 0;
 
-  function show(ok, msg){
-    const el = document.getElementById("result");
-    el.className = ok ? "card ok" : "card bad";
-    el.textContent = msg;
-  }
+    function showCard(ok, data){
+      const el = document.getElementById("result");
+      el.className = ok ? "card ok" : "card bad";
 
-  async function checkin(ticket){
-    if (busy) return;
-    busy = true;
+      const title = ok ? "✅ ACCEPTED" : `⛔ ${(data.reason || "REJECTED")}`;
 
-    const usedBy = (document.getElementById("usedBy").value || "Gate").trim();
-    const t = (ticket || "").trim();
+      const fields = [
+        ["Name", data.name],
+        ["Uni.ID", data.uniId],
+        ["Ticket", data.ticket],
+        ["Phone", data.phone],
+        ["Gate", data.usedBy]
+      ];
 
-    const url = API_URL
-      + "?action=checkin"
-      + "&ticket=" + encodeURIComponent(t)
-      + "&usedBy=" + encodeURIComponent(usedBy)
-      + "&key=" + encodeURIComponent(API_KEY);
+      const rowsHtml = fields.map(([k,v]) => `
+        <div class="label">${k}</div>
+        <div class="value">${(v ?? "").toString().trim() || "-"}</div>
+      `).join("");
 
-    try{
-      const res = await fetch(url, { method: "GET" });
-      const data = await res.json();
-
-      if (data.ok) {
-        show(true,
-`✅ ACCEPTED
-
-Name: ${data.name || "-"}
-Uni.ID: ${data.uniId || "-"}
-Ticket: ${data.ticket || "-"}
-Phone: ${data.phone || "-"}
-Gate: ${data.usedBy || "-"}`
-        );
-        navigator.vibrate?.(80);
-      } else {
-        let extra = "";
-        if (data.reason === "ALREADY_USED"){
-          extra =
-`
-UsedBy: ${data.usedBy || "-"}
-UsedAt: ${data.usedAt || "-"}`
-        }
-
-        show(false,
-`⛔ ${data.reason || "REJECTED"}
-
-Name: ${data.name || "-"}
-Uni.ID: ${data.uniId || "-"}
-Ticket: ${data.ticket || "-"}
-Phone: ${data.phone || "-"}${extra}`
-        );
-        navigator.vibrate?.([60,60,60]);
+      let extra = "";
+      if (!ok && data.reason === "ALREADY_USED") {
+        extra = `
+          <div class="sep"></div>
+          <div class="small">
+            UsedBy: ${(data.usedBy ?? "-")}<br/>
+            UsedAt: ${(data.usedAt ?? "-")}
+          </div>
+        `;
       }
-    } catch(e){
-      show(false, "⛔ Network/API Error: " + e);
-    } finally {
-      setTimeout(()=>{ busy = false; }, 600);
+
+      el.innerHTML = `
+        <div class="result-title">${title}</div>
+        <div class="grid">${rowsHtml}</div>
+        ${extra}
+      `;
     }
-  }
 
-  async function start(){
-    if (scanner) return;
+    async function checkin(ticket){
+      const t = (ticket || "").trim();
+      if (!t) return;
 
-    try{
-      scanner = new Html5Qrcode("reader");
-      await scanner.start(
-        { facingMode:"environment" },
-        { fps:10, qrbox:250 },
-        (decodedText)=> checkin(decodedText)
-      );
-      show(true, "Ready ✅");
-    } catch(e){
+      // debounce same QR while it stays in camera view
+      const now = Date.now();
+      if (t === lastTicket && (now - lastTime) < 1500) return;
+      lastTicket = t; lastTime = now;
+
+      if (busy) return;
+      busy = true;
+
+      const usedBy = (document.getElementById("usedBy").value || "Gate").trim();
+      const url = API_URL
+        + "?action=checkin"
+        + "&ticket=" + encodeURIComponent(t)
+        + "&usedBy=" + encodeURIComponent(usedBy)
+        + "&key=" + encodeURIComponent(API_KEY);
+
+      try{
+        const res = await fetch(url, { method: "GET" });
+        const data = await res.json();
+
+        if (data.ok) {
+          showCard(true, data);
+          navigator.vibrate?.(80);
+        } else {
+          showCard(false, data);
+          navigator.vibrate?.([60,60,60]);
+        }
+      } catch(e){
+        showCard(false, { reason: "NETWORK_ERROR", ticket: t, usedBy });
+      } finally {
+        setTimeout(()=>{ busy = false; }, 500);
+      }
+    }
+
+    async function start(){
+      if (scanner) return;
+
+      try{
+        scanner = new Html5Qrcode("reader");
+        await scanner.start(
+          { facingMode:"environment" },
+          { fps:10, qrbox:250 },
+          (decodedText)=> checkin(decodedText)
+        );
+        showCard(true, { name:"", uniId:"", ticket:"", phone:"", usedBy: (document.getElementById("usedBy").value||"").trim() });
+      } catch(e){
+        scanner = null;
+        showCard(false, { reason: "CAMERA_ERROR", ticket:"", usedBy:"", usedAt:"" });
+      }
+    }
+
+    async function stop(){
+      if(!scanner) return;
+      try{
+        await scanner.stop();
+        scanner.clear();
+      } catch(e) {}
       scanner = null;
-      show(false, "Camera Error: " + e);
+      showCard(false, { reason: "STOPPED", ticket:"", usedBy:"" });
     }
-  }
 
-  async function stop(){
-    if(!scanner) return;
-    try{
-      await scanner.stop();
-      scanner.clear();
-    } catch(e) {}
-    scanner = null;
-    show(true, "Stopped");
-  }
-
-  document.getElementById("startBtn").addEventListener("click", start);
-  document.getElementById("stopBtn").addEventListener("click", stop);
-</script>
+    document.getElementById("startBtn").addEventListener("click", start);
+    document.getElementById("stopBtn").addEventListener("click", stop);
+  </script>
 </body>
 </html>
-
-
-
