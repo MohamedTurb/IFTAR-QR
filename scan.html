@@ -30,40 +30,38 @@
   <div id="result" class="card">Result will appear here</div>
   <div id="reader" class="card"></div>
 
-  <script>
-    // ✅ ضع القيم الحقيقية هنا
-const API_URL = "https://script.google.com/macros/s/AKfycbzfm1r2O32I88scfQafhPcTetvK_8LPOOgzYR5xvjgALQZSYNF14jwHLjwnojTV-kg/exec";
-const API_KEY = "CU_EVENT_2026_SECRET_987654";
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbzfm1r2O32I88scfQafhPcTetvK_8LPOOgzYR5xvjgALQZSYNF14jwHLjwnojTV-kg/exec";
+  const API_KEY = "CU_EVENT_2026_SECRET_987654"; // ✅ تأكد نفس اللي في Apps Script
 
+  let scanner = null;
+  let busy = false;
 
-    let scanner = null;
-    let busy = false;
+  function show(ok, msg){
+    const el = document.getElementById("result");
+    el.className = ok ? "card ok" : "card bad";
+    el.textContent = msg;
+  }
 
-    function show(ok, msg){
-      const el = document.getElementById("result");
-      el.className = ok ? "card ok" : "card bad";
-      el.textContent = msg;
-    }
+  async function checkin(ticket){
+    if (busy) return;
+    busy = true;
 
-    async function checkin(ticket){
-      if (busy) return;
-      busy = true;
+    const usedBy = (document.getElementById("usedBy").value || "Gate").trim();
+    const t = (ticket || "").trim();
 
-      const usedBy = (document.getElementById("usedBy").value || "Gate").trim();
-      const t = (ticket || "").trim();
+    const url = API_URL
+      + "?action=checkin"
+      + "&ticket=" + encodeURIComponent(t)
+      + "&usedBy=" + encodeURIComponent(usedBy)
+      + "&key=" + encodeURIComponent(API_KEY);
 
-      const url = API_URL
-        + "?action=checkin"
-        + "&ticket=" + encodeURIComponent(t)
-        + "&usedBy=" + encodeURIComponent(usedBy)
-        + "&key=" + encodeURIComponent(API_KEY);
+    try{
+      const res = await fetch(url, { method: "GET" });
+      const data = await res.json();
 
-      try{
-        const res = await fetch(url, { method: "GET" });
-        const data = await res.json();
-
-if (data.ok) {
-  show(true,
+      if (data.ok) {
+        show(true,
 `✅ ACCEPTED
 
 Name: ${data.name || "-"}
@@ -71,60 +69,66 @@ Uni.ID: ${data.uniId || "-"}
 Ticket: ${data.ticket || "-"}
 Phone: ${data.phone || "-"}
 Gate: ${data.usedBy || "-"}`
-  );
-} else {
-
-  let extra = "";
-
-  if(data.reason === "ALREADY_USED"){
-    extra =
+        );
+        navigator.vibrate?.(80);
+      } else {
+        let extra = "";
+        if (data.reason === "ALREADY_USED"){
+          extra =
 `
 UsedBy: ${data.usedBy || "-"}
 UsedAt: ${data.usedAt || "-"}`
-  }
+        }
 
-  show(false,
-`⛔ ${data.reason}
+        show(false,
+`⛔ ${data.reason || "REJECTED"}
 
 Name: ${data.name || "-"}
 Uni.ID: ${data.uniId || "-"}
 Ticket: ${data.ticket || "-"}
-Phone: ${data.phone || "-"}`
-  + extra
-  );
-}
-
-    async function start(){
-      if (scanner) return;
-
-      try{
-        scanner = new Html5Qrcode("reader");
-        await scanner.start(
-          { facingMode:"environment" },
-          { fps:10, qrbox:250 },
-          (decodedText)=> checkin(decodedText)
+Phone: ${data.phone || "-"}${extra}`
         );
-        show(true, "Ready ✅");
-      } catch(e){
-        scanner = null;
-        show(false, "Camera Error: " + e);
+        navigator.vibrate?.([60,60,60]);
       }
+    } catch(e){
+      show(false, "⛔ Network/API Error: " + e);
+    } finally {
+      setTimeout(()=>{ busy = false; }, 600);
     }
+  }
 
-    async function stop(){
-      if(!scanner) return;
-      try{
-        await scanner.stop();
-        scanner.clear();
-      } catch(e) {}
+  async function start(){
+    if (scanner) return;
+
+    try{
+      scanner = new Html5Qrcode("reader");
+      await scanner.start(
+        { facingMode:"environment" },
+        { fps:10, qrbox:250 },
+        (decodedText)=> checkin(decodedText)
+      );
+      show(true, "Ready ✅");
+    } catch(e){
       scanner = null;
-      show(true, "Stopped");
+      show(false, "Camera Error: " + e);
     }
+  }
 
-    document.getElementById("startBtn").addEventListener("click", start);
-    document.getElementById("stopBtn").addEventListener("click", stop);
-  </script>
+  async function stop(){
+    if(!scanner) return;
+    try{
+      await scanner.stop();
+      scanner.clear();
+    } catch(e) {}
+    scanner = null;
+    show(true, "Stopped");
+  }
+
+  document.getElementById("startBtn").addEventListener("click", start);
+  document.getElementById("stopBtn").addEventListener("click", stop);
+</script>
 </body>
 </html>
+
 
 
