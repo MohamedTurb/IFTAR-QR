@@ -62,19 +62,37 @@ const API_KEY = "CU_EVENT_2026_SECRET_987654";
         const res = await fetch(url, { method: "GET" });
         const data = await res.json();
 
-        if(data.ok){
-          show(true, "✅ ACCEPTED");
-          navigator.vibrate?.(80);
-        } else {
-          show(false, "⛔ " + (data.reason || "REJECTED"));
-          navigator.vibrate?.([60,60,60]);
-        }
-      } catch(e){
-        show(false, "⛔ Network/API Error: " + e);
-      } finally {
-        setTimeout(()=>{ busy = false; }, 600); // يمنع تكرار سريع
-      }
-    }
+if (data.ok) {
+  show(true,
+`✅ ACCEPTED
+
+Name: ${data.name || "-"}
+Uni.ID: ${data.uniId || "-"}
+Ticket: ${data.ticket || "-"}
+Phone: ${data.phone || "-"}
+Gate: ${data.usedBy || "-"}`
+  );
+} else {
+
+  let extra = "";
+
+  if(data.reason === "ALREADY_USED"){
+    extra =
+`
+UsedBy: ${data.usedBy || "-"}
+UsedAt: ${data.usedAt || "-"}`
+  }
+
+  show(false,
+`⛔ ${data.reason}
+
+Name: ${data.name || "-"}
+Uni.ID: ${data.uniId || "-"}
+Ticket: ${data.ticket || "-"}
+Phone: ${data.phone || "-"}`
+  + extra
+  );
+}
 
     async function start(){
       if (scanner) return;
@@ -108,4 +126,5 @@ const API_KEY = "CU_EVENT_2026_SECRET_987654";
   </script>
 </body>
 </html>
+
 
