@@ -1,351 +1,213 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>QR Check-in</title>
-  <link rel="icon" href="data:,">
-  <script src="https://unpkg.com/html5-qrcode"></script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>QR Check-in</title>
+<link rel="icon" href="data:,">
+<script src="https://unpkg.com/html5-qrcode"></script>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+*{box-sizing:border-box}
+body{
+  font-family:system-ui;
+  margin:0;
+  padding:16px;
+  background:#0b1220;
+  color:#fff;
+}
+h2{margin:0 0 16px 0;font-size:28px}
 
-    body {
-      font-family: system-ui;
-      margin: 0;
-      padding: 16px;
-      background: #0b1220;
-      color: #fff;
-    }
+.card{
+  background:#111a2e;
+  border:1px solid #223055;
+  border-radius:12px;
+  padding:16px;
+  margin:12px 0;
+}
 
-    h2 {
-      margin: 0 0 16px 0;
-      font-size: 28px;
-    }
+button,input{
+  padding:12px 16px;
+  border-radius:8px;
+  border:1px solid #2b3b68;
+  background:#0b1220;
+  color:#fff;
+  font-size:16px;
+  min-height:44px;
+}
 
-    .card {
-      background: #111a2e;
-      border: 1px solid #223055;
-      border-radius: 12px;
-      padding: 16px;
-      margin: 12px 0;
-    }
+button{cursor:pointer;font-weight:600}
 
-    button, input {
-      padding: 12px 16px;
-      border-radius: 8px;
-      border: 1px solid #2b3b68;
-      background: #0b1220;
-      color: #fff;
-      font-size: 16px;
-      min-height: 44px;
-    }
+.ok{border-color:#1f7a3a;background:rgba(31,122,58,.1)}
+.bad{border-color:#7a1f1f;background:rgba(122,31,31,.1)}
 
-    button {
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
+#reader{width:100%;min-height:260px}
 
-    button:active {
-      opacity: 0.8;
-    }
+.result-title{
+  font-size:20px;
+  font-weight:800;
+  margin-bottom:16px;
+}
 
-    input {
-      flex: 1;
-      min-width: 120px;
-    }
+.grid{
+  display:grid;
+  grid-template-columns:140px 1fr;
+  gap:12px 16px;
+}
 
-    .ok {
-      border-color: #1f7a3a;
-      background-color: rgba(31, 122, 58, 0.1);
-    }
+.label{color:#9ca3af;font-size:13px}
+.value{font-weight:650;word-break:break-word}
 
-    .bad {
-      border-color: #7a1f1f;
-      background-color: rgba(122, 31, 31, 0.1);
-    }
+.sep{
+  height:1px;
+  background:#223055;
+  margin:12px 0;
+  grid-column:1/-1;
+}
 
-    #reader {
-      width: 100%;
-      min-height: 260px;
-    }
+.small,.muted{
+  color:#9ca3af;
+  font-size:12px;
+  margin-top:10px;
+}
 
-    /* Result formatting */
-    .result-title {
-      font-size: 20px;
-      font-weight: 800;
-      margin: 0 0 16px 0;
-    }
+/* 🔥 Meal Badge */
+.meal-badge{
+  padding:5px 12px;
+  border-radius:20px;
+  font-size:13px;
+  font-weight:700;
+  display:inline-block;
+}
+.meal-1{background:#1f7a3a}
+.meal-2{background:#7a5f1f}
+.meal-siamy{background:#7a1f5f}
 
-    .grid {
-      display: grid;
-      grid-template-columns: 140px 1fr;
-      gap: 12px 16px;
-    }
-
-    .label {
-      color: #9ca3af;
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    .value {
-      font-weight: 650;
-      word-break: break-word;
-    }
-
-    .sep {
-      height: 1px;
-      background: #223055;
-      margin: 12px 0;
-      grid-column: 1 / -1;
-    }
-
-    .small {
-      color: #9ca3af;
-      font-size: 12px;
-      margin-top: 10px;
-      white-space: normal;
-      line-height: 1.5;
-    }
-
-    .muted {
-      color: #9ca3af;
-      font-size: 12px;
-      margin-top: 12px;
-      line-height: 1.4;
-    }
-
-    /* Mobile responsive */
-    @media (max-width: 600px) {
-      body {
-        padding: 12px;
-      }
-
-      h2 {
-        font-size: 24px;
-        margin-bottom: 12px;
-      }
-
-      .card {
-        padding: 14px;
-        margin: 10px 0;
-        border-radius: 10px;
-      }
-
-      button, input {
-        padding: 11px 14px;
-        font-size: 15px;
-        min-height: 42px;
-      }
-
-      div[style*="display:flex"] {
-        flex-direction: column;
-        gap: 12px !important;
-      }
-
-      input {
-        width: 100%;
-        min-width: unset;
-      }
-
-      button {
-        width: 100%;
-      }
-
-      .grid {
-        grid-template-columns: 1fr;
-        gap: 4px 0;
-      }
-
-      .label {
-        color: #7ca3af;
-        font-size: 11px;
-        margin-bottom: 2px;
-      }
-
-      .value {
-        margin-bottom: 10px;
-      }
-
-      .result-title {
-        font-size: 18px;
-        margin-bottom: 12px;
-      }
-
-      #reader {
-        min-height: 240px;
-      }
-
-      .small, .muted {
-        font-size: 11px;
-      }
-    }
-
-    @media (max-width: 400px) {
-      body {
-        padding: 10px;
-      }
-
-      h2 {
-        font-size: 20px;
-      }
-
-      .card {
-        padding: 12px;
-        border-radius: 8px;
-      }
-
-      button, input {
-        padding: 10px 12px;
-        font-size: 14px;
-      }
-
-      .result-title {
-        font-size: 16px;
-      }
-
-      #reader {
-        min-height: 200px;
-      }
-    }
-  </style>
+/* Mobile */
+@media(max-width:600px){
+  .grid{grid-template-columns:1fr}
+  .label{font-size:11px;margin-bottom:2px}
+  .value{margin-bottom:10px}
+}
+</style>
 </head>
 
 <body>
-  <h2>QR Check-in</h2>
 
-  <div class="card">
-    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-      <input id="usedBy" value="Gate-A1" />
-      <button id="startBtn">Start Scan</button>
-      <button id="stopBtn">Stop</button>
-    </div>
-    <div class="muted">Tip: set each phone to Gate-A1 / Gate-A2 / Gate-A3</div>
+<h2>QR Check-in</h2>
+
+<div class="card">
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <input id="usedBy" value="Gate-A1"/>
+    <button id="startBtn">Start Scan</button>
+    <button id="stopBtn">Stop</button>
   </div>
+  <div class="muted">Set each phone to Gate-A1 / Gate-A2</div>
+</div>
 
-  <div id="result" class="card">
-    <div class="small">Result will appear here…</div>
-  </div>
+<div id="result" class="card">
+  <div class="small">Result will appear here…</div>
+</div>
 
-  <div id="reader" class="card"></div>
+<div id="reader" class="card"></div>
 
-  <script>
-    // ✅ ضع القيم الحقيقية هنا
-  const API_URL = "https://script.google.com/macros/s/AKfycbzfm1r2O32I88scfQafhPcTetvK_8LPOOgzYR5xvjgALQZSYNF14jwHLjwnojTV-kg/exec";
-  const API_KEY = "CU_EVENT_2026_SECRET_987654"; // ✅ تأكد نفس اللي في Apps Script
+<script>
+const API_URL="PUT_YOUR_SCRIPT_URL_HERE";
+const API_KEY="CU_EVENT_2026_SECRET_987654";
 
-    let scanner = null;
-    let busy = false;
-    let lastTicket = null;
-    let lastTime = 0;
+let scanner=null;
+let busy=false;
+let lastTicket=null;
+let lastTime=0;
 
-    function showCard(ok, data){
-      const el = document.getElementById("result");
-      el.className = ok ? "card ok" : "card bad";
+function showCard(ok,data){
+  const el=document.getElementById("result");
+  el.className=ok?"card ok":"card bad";
 
-      const title = ok ? "✅ ACCEPTED" : `⛔ ${(data.reason || "REJECTED")}`;
+  const title=ok?"✅ ACCEPTED":`⛔ ${data.reason||"REJECTED"}`;
 
-      const fields = [
-        ["Name", data.name],
-        ["Uni.ID", data.uniId],
-        ["Ticket", data.ticket],
-        ["Phone", data.phone],
-        ["Gate", data.usedBy]
-      ];
+  let mealClass="";
+  if(data.meal==="Meal 1") mealClass="meal-1";
+  if(data.meal==="Meal 2") mealClass="meal-2";
+  if(data.meal==="Siamy") mealClass="meal-siamy";
 
-      const rowsHtml = fields.map(([k,v]) => `
-        <div class="label">${k}</div>
-        <div class="value">${(v ?? "").toString().trim() || "-"}</div>
-      `).join("");
+  const fields=[
+    ["Name",data.name],
+    ["Uni.ID",data.uniId],
+    ["Ticket",data.ticket],
+    ["Phone",data.phone],
+    ["Meal",`<span class="meal-badge ${mealClass}">${data.meal||"-"}</span>`],
+    ["Gate",data.usedBy]
+  ];
 
-      let extra = "";
-      if (!ok && data.reason === "ALREADY_USED") {
-        extra = `
-          <div class="sep"></div>
-          <div class="small">
-            UsedBy: ${(data.usedBy ?? "-")}<br/>
-            UsedAt: ${(data.usedAt ?? "-")}
-          </div>
-        `;
-      }
+  const rowsHtml=fields.map(([k,v])=>`
+    <div class="label">${k}</div>
+    <div class="value">${v??"-"}</div>
+  `).join("");
 
-      el.innerHTML = `
-        <div class="result-title">${title}</div>
-        <div class="grid">${rowsHtml}</div>
-        ${extra}
-      `;
+  el.innerHTML=`
+    <div class="result-title">${title}</div>
+    <div class="grid">${rowsHtml}</div>
+  `;
+}
+
+async function checkin(ticket){
+  const t=(ticket||"").trim();
+  if(!t) return;
+
+  const now=Date.now();
+  if(t===lastTicket&&(now-lastTime)<1500) return;
+  lastTicket=t;lastTime=now;
+
+  if(busy) return;
+  busy=true;
+
+  const usedBy=document.getElementById("usedBy").value||"Gate";
+
+  const url=API_URL+
+  "?action=checkin"+
+  "&ticket="+encodeURIComponent(t)+
+  "&usedBy="+encodeURIComponent(usedBy)+
+  "&key="+encodeURIComponent(API_KEY);
+
+  try{
+    const res=await fetch(url);
+    const data=await res.json();
+
+    if(data.ok){
+      showCard(true,data);
+      navigator.vibrate?.(80);
+    }else{
+      showCard(false,data);
+      navigator.vibrate?.([60,60,60]);
     }
+  }catch(e){
+    showCard(false,{reason:"NETWORK_ERROR",ticket:t});
+  }finally{
+    setTimeout(()=>busy=false,500);
+  }
+}
 
-    async function checkin(ticket){
-      const t = (ticket || "").trim();
-      if (!t) return;
+async function start(){
+  if(scanner) return;
+  scanner=new Html5Qrcode("reader");
+  await scanner.start(
+    {facingMode:"environment"},
+    {fps:10,qrbox:250},
+    decodedText=>checkin(decodedText)
+  );
+}
 
-      // debounce same QR while it stays in camera view
-      const now = Date.now();
-      if (t === lastTicket && (now - lastTime) < 1500) return;
-      lastTicket = t; lastTime = now;
+async function stop(){
+  if(!scanner) return;
+  await scanner.stop();
+  scanner.clear();
+  scanner=null;
+}
 
-      if (busy) return;
-      busy = true;
+document.getElementById("startBtn").onclick=start;
+document.getElementById("stopBtn").onclick=stop;
+</script>
 
-      const usedBy = (document.getElementById("usedBy").value || "Gate").trim();
-      const url = API_URL
-        + "?action=checkin"
-        + "&ticket=" + encodeURIComponent(t)
-        + "&usedBy=" + encodeURIComponent(usedBy)
-        + "&key=" + encodeURIComponent(API_KEY);
-
-      try{
-        const res = await fetch(url, { method: "GET" });
-        const data = await res.json();
-
-        if (data.ok) {
-          showCard(true, data);
-          navigator.vibrate?.(80);
-        } else {
-          showCard(false, data);
-          navigator.vibrate?.([60,60,60]);
-        }
-      } catch(e){
-        showCard(false, { reason: "NETWORK_ERROR", ticket: t, usedBy });
-      } finally {
-        setTimeout(()=>{ busy = false; }, 500);
-      }
-    }
-
-    async function start(){
-      if (scanner) return;
-
-      try{
-        scanner = new Html5Qrcode("reader");
-        await scanner.start(
-          { facingMode:"environment" },
-          { fps:10, qrbox:250 },
-          (decodedText)=> checkin(decodedText)
-        );
-        showCard(true, { name:"", uniId:"", ticket:"", phone:"", usedBy: (document.getElementById("usedBy").value||"").trim() });
-      } catch(e){
-        scanner = null;
-        showCard(false, { reason: "CAMERA_ERROR", ticket:"", usedBy:"", usedAt:"" });
-      }
-    }
-
-    async function stop(){
-      if(!scanner) return;
-      try{
-        await scanner.stop();
-        scanner.clear();
-      } catch(e) {}
-      scanner = null;
-      showCard(false, { reason: "STOPPED", ticket:"", usedBy:"" });
-    }
-
-    document.getElementById("startBtn").addEventListener("click", start);
-    document.getElementById("stopBtn").addEventListener("click", stop);
-  </script>
 </body>
 </html>
